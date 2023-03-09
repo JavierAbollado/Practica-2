@@ -1,36 +1,37 @@
 """
 Solution to the one-way tunnel
 """
+
 import time
 import random
 from multiprocessing import Lock, Condition, Process, Semaphore, BoundedSemaphore
 from multiprocessing import Value, Array
 
+# direcciones
 SOUTH = 1
 NORTH = 0
 
+# cantidad a producir
 NCARS = 100
 NPED = 10
-TIME_CARS = 0.5  # a new car enters each 0.5s
-TIME_PED  = 5    # a new pedestrian enters each 5s
-TIME_IN_BRIDGE_CARS        = (1, 0.5) # normal 1s, 0.5s
-TIME_IN_BRIDGE_PEDESTRGIAN = (30, 10) # normal 1s, 0.5s
 
-N_CARS_IN_BRIDGE = 20
-N_PEDESTRIANS_IN_BRIDGE = 20
+# tiempo que pasa entre producciones (distribución exponencial)
+TIME_CARS = 0.5
+TIME_PED  = 5
+
+# tiempo que tarda en cruzar el puente (distribución normal)
+TIME_IN_BRIDGE_CARS = (1, 0.5) 
+TIME_IN_BRIDGE_PED  = (30, 10) 
+
+# máximo nº que caben a la vez en el puente
+N_CARS_IN_BRIDGE = 3
+N_PED_IN_BRIDGE  = 20
 
 class Monitor():
     def __init__(self):
         self.mutex = Lock()
-        self.lock = Lock()
-        self.lock_1 = Lock()
-        self.lock_2 = Lock()
-        self.lock_3 = Lock()
-        self.lock_1.acquire()
-        self.lock_2.acquire()
-        self.lock_3.acquire()
         self.sem_cars = BoundedSemaphore(N_CARS_IN_BRIDGE)
-        self.sem_pedestrian = BoundedSemaphore(N_PEDESTRIANS_IN_BRIDGE)
+        self.sem_pedestrian = BoundedSemaphore(N_PED_IN_BRIDGE)
         self.lcoche   = Array("i", 2)
         self.personas = Value("i", 0)
 
@@ -74,7 +75,7 @@ def delay_car_south() -> None:
     time.sleep(random.normalvariate(TIME_IN_BRIDGE_CARS[0], TIME_IN_BRIDGE_CARS[1]))
 
 def delay_pedestrian() -> None:
-    time.sleep(random.normalvariate(TIME_IN_BRIDGE_PEDESTRGIAN[0], TIME_IN_BRIDGE_PEDESTRGIAN[1]))
+    time.sleep(random.normalvariate(TIME_IN_BRIDGE_PED[0], TIME_IN_BRIDGE_PED[1]))
 
 def car(cid: int, direction: int, monitor: Monitor)  -> None:
     print(f"car {cid} heading {direction} wants to enter. {monitor}")

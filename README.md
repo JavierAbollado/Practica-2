@@ -24,9 +24,21 @@ N_CARS_IN_BRIDGE = 3
 N_PED_IN_BRIDGE  = 20
 ```
 
+Para cada versión, cronometraremos tiempos y al final haremos unos gráficos para ver los resultados.
+
+```python
+# cronometrar : tiempos totales en cruzar el puente
+CRONO_CARS = Value("d", 0.0)
+CRONO_PEDS = Value("d", 0.0)
+
+# cronometrar : tiempos totales en ser generados
+CRONO_GEN_CARS = Value("d", 0.0)
+CRONO_GEN_PEDS = Value("d", 0.0)
+```
+
 ## Versión 1
 
-Solo puede pasar por el puente 1 coche o una persona a la vez. Hay 2 locks:
+Solo puede pasar por el puente 1 coche o 1 persona a la vez. Para ello necesitamos únicamente 2 locks:
 
- - mutex: para todas las funciones de añadir y liberar un coche / persona de las colas.
- - lock : para dejar paso por el puente (solo a uno). 
+ 1) **mutex**: para todas las funciones de añadir y liberar un coche / persona de las colas.
+ 2) **lock** : para dejar paso por el puente (solo a uno). 

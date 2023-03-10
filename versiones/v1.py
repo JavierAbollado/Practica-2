@@ -11,9 +11,13 @@ from multiprocessing import Value, Array
 SOUTH = 1
 NORTH = 0
 
+# para hacer prints
+str_dir = lambda direction : "->" if direction == NORTH else "<-" 
+str_id  = lambda id : (" "*3 + str(id))[-3:]
+
 # cantidad a producir
-NCARS = 100
-NPED = 10
+NCARS = 20
+NPED = 5
 
 # tiempo que pasa entre producciones (distribución exponencial)
 TIME_CARS = 0.5
@@ -39,10 +43,7 @@ CRONO_GEN_PEDS = Value("d", 0.0)
 class Monitor():
     def __init__(self):
         self.mutex = Lock()
-        self.sem = Lock()  # Semaforo actual : cuando se active, será uno de los dos de abajo
-        # self.sem_cars_north = BoundedSemaphore(N_CARS_IN_BRIDGE)
-        # self.sem_cars_south  = BoundedSemaphore(N_CARS_IN_BRIDGE)
-        # self.sem_pedestrian = BoundedSemaphore(N_PED_IN_BRIDGE)
+        self.sem   = Lock()  
         self.cars        = Array("i", 2)   # [Norte, Sur]
         self.pedestrians = Value("i", 0)
 
@@ -54,12 +55,12 @@ class Monitor():
 
     def enter_car(self, cid : int, direction : int) -> None:
         self.sem.acquire()
-        print(f"car {cid} heading {direction} enters the bridge. {self}")
+        print(f"[car {str_id(cid)}] enters the bridge.\t{self}")
         if direction == NORTH :
             delay_car_north()
         else:
             delay_car_south()
-        print(f"car {cid} heading {direction} leaving the bridge. {self}")
+        print(f"[car {str_id(cid)}] leaving the bridge.\t{self}")
         self.sem.release()
         self.leaves_car(direction)
 
@@ -76,9 +77,9 @@ class Monitor():
 
     def enter_pedestrian(self, pid : int) -> None:
         self.sem.acquire()
-        print(f"pedestrian {pid} enters the bridge. {self}")
+        print(f"[ped {str_id(pid)}] enters the bridge.\t{self}")
         delay_pedestrian()
-        print(f"pedestrian {pid} leaving the bridge. {self}")
+        print(f"[ped {str_id(pid)}] leaving the bridge.\t{self}")
         self.sem.release()
         self.leaves_pedestrian()
 
@@ -88,7 +89,7 @@ class Monitor():
         self.mutex.release()
 
     def __repr__(self) -> str:
-        return f"Monitor: (p,c1,c2) = ({self.pedestrians.value}, {self.cars[0]}, {self.cars[1]})"
+        return f"Monitor: ({self.pedestrians.value}, {self.cars[0]}, {self.cars[1]})"
 
 def ticket_car():
     pass
@@ -112,16 +113,16 @@ def delay_pedestrian() -> None:
     time.sleep(max(0,t))
 
 def car(cid: int, direction: int, monitor: Monitor)  -> None:
-    print(f"car {cid} heading {direction} wants to enter. {monitor}")
+    print(f"[car {str_id(cid)}] wants to enter ({str_dir(direction)}).\t{monitor}")
     monitor.wants_enter_car(direction)
     monitor.enter_car(cid, direction)
-    print(f"car {cid} heading {direction} out of the bridge. {monitor}")
+    print(f"[car {str_id(cid)}] out of the bridge.\t{monitor}")
 
 def pedestrian(pid: int, monitor: Monitor) -> None:
-    print(f"pedestrian {pid} wants to enter. {monitor}")
+    print(f"[ped {str_id(pid)}] wants to enter.\t{monitor}")
     monitor.wants_enter_pedestrian()
     monitor.enter_pedestrian(pid)
-    print(f"pedestrian {pid} out of the bridge. {monitor}")
+    print(f"[ped {str_id(pid)}] out of the bridge.\t{monitor}")
 
 def gen_pedestrian(monitor: Monitor) -> None:
     pid = 0

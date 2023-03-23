@@ -1,4 +1,4 @@
-from multiprocessing import Array
+from multiprocessing import Array, Value
 import matplotlib.pyplot as plt
 
 

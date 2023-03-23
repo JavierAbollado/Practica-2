@@ -6,10 +6,16 @@ Tendremos diferentes versiones. Cada una tendrá ciertas restricciones, como el 
 # direcciones
 SOUTH = 1
 NORTH = 0
+index_dir  = lambda dir : 0 if dir == NORTH else 1
+change_dir = lambda dir : NORTH if dir == SOUTH else SOUTH
+
+# para hacer prints
+str_dir = lambda direction : "->" if direction == NORTH else "<-" 
+str_id  = lambda id : (" "*3 + str(id))[-3:]
 
 # cantidad a producir
-NCARS = 100
-NPED = 10
+NCARS = 20
+NPEDS = 10
 
 # tiempo que pasa entre producciones (distribución exponencial)
 TIME_CARS = 0.5
@@ -17,11 +23,11 @@ TIME_PED  = 5
 
 # tiempo que tarda en cruzar el puente (distribución normal)
 TIME_IN_BRIDGE_CARS = (1, 0.5) 
-TIME_IN_BRIDGE_PED  = (15, 5) 
+TIME_IN_BRIDGE_PED  = (10, 5) 
 
 # máximo nº que caben a la vez en el puente
 N_CARS_IN_BRIDGE = 3
-N_PED_IN_BRIDGE  = 20
+N_PEDS_IN_BRIDGE = 20
 ```
 
 Para cada versión, cronometraremos tiempos y al final haremos unos gráficos para ver los resultados.

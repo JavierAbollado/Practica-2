@@ -339,3 +339,10 @@ Podemos observar como efectivamente únicamente uno de los tres grupos se encuen
   src="/images/hist.gif"
   alt="Historial"
   caption="Evolución de la entrada / salida y esperas del puente">
+
+Siendo así el resultado final:
+
+<img
+  src="/images/hist.png"
+  alt="Historial_imagen"
+  caption="Evolución de la entrada / salida y esperas del puente_imagen">

@@ -137,9 +137,10 @@ def animate_plot(history : History, save=False) -> None:
 
 ## Monitor
 
-Para el puente nos creamos un objeto *Monitor*, en él nos aseguramos de que los invariantes y condiciones de inanición se cumplan.
+Para el puente nos creamos un objeto *Monitor*, en él nos aseguramos de que los invariantes y condiciones de inanición se cumplan. En la hoja hemos supuesto que no hay limite de personas y coches dentro del puente, aunque luego en el código hemos añadido esa restricción para ser más realista. El invariante no lo cambia, simplemente afecta a cuando pueden entrar. Si no quisieramos ningún límite (el cual no sería realista), simplemente hay que quitar las variables ```N_CARS_IN_BRIDGE``` y ```N_PEDS_IN_BRIDGE``` y los condicionales ```self.np < N_PEDS_IN_BRIDGE``` y ```self.nc[i] < N_CARS_IN_BRIDGE``` para i = 0,1.
 
-<image src="/images/teoria.png" alt="parte teórica en papel">
+<image src="/images/invariante_prpa_1.jpg" alt="parte teórica en papel 1">
+<image src="/images/invariante_prpa_2.jpg" alt="parte teórica en papel 2">
 
 Para ello cubrimos con locks todas las partes críticas, y en el definimos todas las funciones necesarias para introducir coches, personas y asegurar que cumplen los requisitos pedidos.
 

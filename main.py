@@ -3,6 +3,8 @@ import random
 from multiprocessing import Lock, Condition, Process, BoundedSemaphore
 from multiprocessing import Value, Array
 
+from history import History, plot
+
 # direcciones
 SOUTH = 1
 NORTH = 0

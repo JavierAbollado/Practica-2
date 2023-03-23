@@ -48,3 +48,10 @@ Solo puede pasar por el puente 1 coche o 1 persona a la vez. Para ello necesitam
 
  1) **mutex**: para todas las funciones de añadir y liberar un coche / persona de las colas.
  2) **lock** : para dejar paso por el puente (solo a uno). 
+
+
+## Añadir imagenes
+<image
+  src="/images/hist.png"
+  alt="Historial"
+  caption="Evolución de la entrada / salida y esperas del puente">

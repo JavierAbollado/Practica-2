@@ -51,7 +51,7 @@ Solo puede pasar por el puente 1 coche o 1 persona a la vez. Para ello necesitam
 
 
 ## Añadir imagenes
-<image
-  src="/images/hist.png"
+<img
+  src="/images/hist.gif"
   alt="Historial"
   caption="Evolución de la entrada / salida y esperas del puente">

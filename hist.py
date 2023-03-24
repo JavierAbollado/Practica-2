@@ -90,13 +90,13 @@ def animate_plot(history : History, save=False, show_image=True, show_gif=False)
         ts = range(1, size+1)
         ani = animation.FuncAnimation(fig, plot, ts, fargs=[ax1, ax2, x, y], interval=25)
         if save:
-            ani.save("images/hist.gif")
+            ani.save("images/prueba.gif")
     
     # create image
     if show_image:
         _fig, (_ax1,_ax2) = plt.subplots(2,1, figsize=(12,7))
         plot(size+1, _ax1, _ax2, x, y)
         if save:
-            ani.save("images/hist.png")
+            _fig.savefig("images/prueba.png")
             
     plt.show()

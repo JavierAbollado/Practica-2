@@ -3,7 +3,7 @@ import random
 from multiprocessing import Lock, Condition, Process
 from multiprocessing import Value, Array
 
-from hist import History, plot
+from hist import History, animate_plot
 
 # direcciones
 SOUTH = 1
@@ -133,18 +133,14 @@ def ticket_pedestrian():
 
 def delay_car_north() -> None:
     t = random.normalvariate(TIME_IN_BRIDGE_CARS[0], TIME_IN_BRIDGE_CARS[1])
-    CRONO_CARS.value += t
     time.sleep(max(0,t))
 
 def delay_car_south() -> None:
     t = random.normalvariate(TIME_IN_BRIDGE_CARS[0], TIME_IN_BRIDGE_CARS[1])
-    CRONO_CARS.value += t
     time.sleep(max(0,t))
 
 def delay_pedestrian() -> None:
     t = random.normalvariate(TIME_IN_BRIDGE_PED[0], TIME_IN_BRIDGE_PED[1])
-    CRONO_PEDS.value += t
-    print("t :", t)
     time.sleep(max(0,t))
 
 def car(cid: int, direction: int, monitor: Monitor)  -> None:
@@ -198,9 +194,13 @@ def gen_cars(monitor: Monitor) -> None:
 
 def main():
     global CRONO_TOTAL, monitor
+
+    # crear el monitor y los procesos de generacion
     monitor = Monitor(n_prints=4*(NCARS+NPEDS))
     gcars = Process(target=gen_cars, args=(monitor,))
     gped = Process(target=gen_pedestrian, args=(monitor,))
+    
+    # comenzar los procesos
     t = time.time()
     gcars.start()
     gped.start()
@@ -208,7 +208,10 @@ def main():
     gped.join()
     t2 = time.time()
     CRONO_TOTAL = t2 - t
-    plot(monitor.history)
+    
+    # cambiar "show_image" y "show_gif" para visualizar una imagen o un gif respectivamente
+    # save = True -> para guardar los resultados
+    animate_plot(monitor.history, show_image=False, show_gif=True, save=False)
 
 
 

@@ -1,25 +1,26 @@
-# Practica 2
-
-## Índice 
+# Índice - Practica 2
 
  - [Distribución de archivos](#id0)
  - [Explicación](#id1)
     - [Variables globales](#id1.1)
     - [Importar paquetes](#id1.2)
     - [Monitor](#id1.3)
+    - [Distintas soluciones por turnos](#id1.3.0)
+       - [Prioridad en uno de los grupos](#id1.3.1)
+       - [Tiempo limitado de paso](#id1.3.2)
     - [Delays](#id1.4)
     - [Generador](#id1.5)
     - [Main](#id1.6)
   - [Resultados](#id2)
       
-## Distribución de archivos <a name=id0></a>
+# Distribución de archivos <a name=id0></a>
 
  - *main.py*: archivo principal a ejecutar.
  - *hist.py*: lo importaremos en el *main.py*, es un archivo con el fin de crear la animación final que se encuentra al final del readme, en él tendremos varias funciones para graficar y un objeto principal *History* para guardar todo el historial. No se explicará mucho el código, pues es complementario.
  - *images/*: para guardar la demostración de inanición y los gif.
  - *versiones/*: evolución de versiones antiguas del trabajo (sin comentar detalladamente).
  
-## Explicación <a name=id1></a>
+# Explicación <a name=id1></a>
 
 Tenemos el siguiente escenario: 
 
@@ -28,7 +29,7 @@ puente no permite el paso de vehículos en ambos sentidos. Por motivos
 de seguridad los peatones y los vehículos no pueden compartir el puente. En el caso de los
 peatones, sí que que pueden pasar peatones en sentido contrario.*
 
-### Variables globales <a name=id1.1></a>
+## Variables globales <a name=id1.1></a>
 
 Para resolver el problema, primero definimos una serie de constantes, como el número de coches / personas que pueden estar a la vez en el puente, el número de coches / personas a generar, los tiempos que tardan en pasar, etc. 
 
@@ -60,7 +61,7 @@ N_CARS_IN_BRIDGE = 3
 N_PEDS_IN_BRIDGE = 20
 ```
 
-### Importar paquetes <a name=id1.2></a>
+## Importar paquetes <a name=id1.2></a>
 
 Importamos los paquetes necesarios para ejecutar el script
 
@@ -89,7 +90,7 @@ class Monitor():
 
 no hemos asegurado que la información venga en el orden real pues como ya has comentado en clase, al ejecutar los prints desde distintos procesos puede que algunas líneas se escriban antes que otras que se habían ejecutado antes (en un espacio de tiempo muy junto), pero nos da una visualización general del proceso.
 
-### Monitor <a name=id1.3></a>
+## Monitor <a name=id1.3></a>
 
 Para el puente nos creamos un objeto *Monitor*, en él nos aseguramos de que los invariantes y condiciones de inanición se cumplan. En la hoja hemos supuesto que no hay limite de personas y coches dentro del puente, aunque luego en el código hemos añadido esa restricción para ser más realista. El invariante no lo cambia, simplemente afecta a cuando pueden entrar. Si no quisieramos ningún límite (el cual no sería realista), simplemente hay que quitar las variables ```N_CARS_IN_BRIDGE``` y ```N_PEDS_IN_BRIDGE``` y los condicionales ```self.np < N_PEDS_IN_BRIDGE``` y ```self.nc[i] < N_CARS_IN_BRIDGE``` para i = 0,1.
 
@@ -254,7 +255,84 @@ class Monitor():
         return f"Monitor: ({self.peds.value}, {self.cars[0]}, {self.cars[1]})"
 ```
 
-### Delays <a name=id1.4></a>
+## Distintas soluciones por turnos <a name=id1.3.0></a>
+
+En mi caso he optado por seguir introduciendo en el puente el grupo actualmente dentro para mantener la fluidez, teniendo en cuenta que en la realidad estar todo el rato cambiando de grupos tarda tiempo (coches que estaban pasando frenan y dejan de pasar, se apartan y comienzan a arrancar los demás, en el caso de los peatones es instantáneo). Sin embargo también podemos hacer distintas versiones (a gusto del diseñador, cada uno con sus ventajas y desventajas)
+
+### Prioridad en uno de los grupos <a name=id1.3.1></a>
+ 
+ Idea: Por ejemplo supongamos que queremos que los peatones tengan prioridad de paso ante todos, entonces si están pasando los coches (da igual la dirección) y quiere entrar un peaton, dejamos de pasar los coches (esperamos a que terminen de pasar los que están dentro) y comenzamos a pasar a los peatones, para ello 
+ 
+   - Añadimos a la condición de entrada de los coches ```(self.nc[index] < N_CARS_IN_BRIDGE and self.nc[1-index] + self.np.value == 0)```, la condición ```self.peds.value == 0``` (con un *and*). Para checkear que no hay peatones esperando.
+   
+   - Cambiamos los avisos de salida del puente de 
+   
+```python
+   index = index_dir(direction)
+   (...)
+   self.get_cond_cars(direction).notify(1)
+   self.get_cond_cars(change_dir(direction)).notify_all()
+   self.cond_peds.notify_all()
+```
+
+  a 
+   
+```python
+  index = index_dir(direction)
+  (...)
+  # si hay peatones esperando, les avisamos
+  if self.peds.value > 0:
+      self.cond_peds.notify_all()
+  # si no, si hay coches de nuestra dirección esperando, avisamos a uno
+  elif self.cars[index] > 0:
+      self.get_cond_cars(direction).notify(1)
+  # si no, avismos a los demás coches
+  else:
+      self.get_cond_cars(change_dir(direction)).notify_all()
+```
+
+### Tiempo limitado de paso <a name=id1.3.2></a>
+ 
+ Idea: que no puedan estar X (variable global) tiempo seguido pasando el mismo grupo y deje a todos los demas bloqueados. 
+ 
+ Para ello añadimos una variable en el init que guarde en que momento a comenzado a entrar un grupo, ```self.t = Value("f", time.time())```. Y cada vez que un nuevo grupo entra en el puente (es decir su número actual dentro del puente es 0) la actualiza, es decir en las funciones *wants_enter_car* y *wants_enter_pedestrian*, justo después de pasar la condición hacemos un 
+ 
+```python
+    if NUM == 0:
+        self.t.value = time.time()
+```
+
+  donde *NUM* es *self.np* en *wants_enter_pedestrian* y *self.nc[index]* en *wants_enter_car* (con su respectivo index). Una vez tenemos disponible dicha información actualmos al similar al caso anterior. Para ello, veamos como cambiaría en la sección de los coches (de personas sería análogo), 
+ 
+   - Añadimos a las condiciones de entrada ```(self.nc[index] < N_CARS_IN_BRIDGE and self.nc[1-index] + self.np.value == 0)``` la condición ```(self.t.value < X or self.peds.value + self.cars[1-index] == 0)```, para que entremos solo si llevamos menos tiempo entrando del propuesto como límite, X, o no hay más grupos que quieran entrar.
+  
+   - Cambiamos los avisos de salida del puente de 
+   
+```python
+   index = index_dir(direction)
+   (...)
+   self.get_cond_cars(direction).notify(1)
+   self.get_cond_cars(change_dir(direction)).notify_all()
+   self.cond_peds.notify_all()
+```
+
+  a 
+   
+```python
+  index = index_dir(direction)
+  (...)
+  # si cumplimos las condiciones seguimos llamando a los de nuestro grupo
+  if self.t.value < X or self.peds.value + self.cars[1-index] == 0:
+      self.get_cond_cars(direction).notify(1)
+  # si no, si los otros coches están esperando, les avisamos
+  elif self.cars[1-index] > 0:
+      self.get_cond_cars(change_dir(direction)).notify_all()
+  # si no, avisamos a los peatones
+  else:
+      self.cond_peds.notify_all()
+```
+
+## Delays <a name=id1.4></a>
 
 Definimos funciones para los tiempos que tardan en pasar cada uno por el puente. Las funciones *ticket* habían sido creadas con el fin de también introducir un tiempo que se tarda en coger un ticket para poder entrar al puente, pero al final solo era esperar más por lo que lo he obviado.   
 
@@ -282,7 +360,7 @@ def delay_pedestrian() -> None:
     time.sleep(max(0,t))
 ```
 
-### Generador <a name=id1.5></a>
+## Generador <a name=id1.5></a>
 
 Este apartado permitirá generar distintos coches (aleatoriamente por el norte o por el sur) y distintas personas. Según se vayan creando las irá introduciendo por el puente. Las funciones de generar son *gen_cars* y *gen_pedestrians*, mientras que las funciones *car* y *pedestrian* se encargan individualmente de que cada coche y persona respectivamente, entre y salga del puente cuando llegue su turno.
 
@@ -335,7 +413,7 @@ def gen_cars(monitor: Monitor) -> None:
         p.join()
 ```
 
-### Main <a name=id1.6></a>
+## Main <a name=id1.6></a>
 
 Por último para ejecutar todo el proceso ejecutamos el *main* que comienza los procesos de generación de coches y personas. La variable *CRONO_TOTAL* nos dice el tiempo que ha tardado en ejecutar todo el proceso.
 
@@ -355,7 +433,7 @@ if __name__ == "__main__":
     animate_plot(monitor.history)
 ```
 
-## Resultados <a name=id2></a>
+# Resultados <a name=id2></a>
 
 Podemos observar como efectivamente únicamente uno de los tres grupos se encuentra dentro del puente al mismo tiempo. Además se puede comprobar también que el número máximo de personas y coches dentro del puente es ```N_CARS_IN_BRIDGE = 3``` y ```N_PEDS_IN_BRIDGE = 20``` respectivamente, como era de esperar.   
 

@@ -304,7 +304,7 @@ En mi caso he optado por seguir introduciendo en el puente el grupo actualmente 
 
   donde *NUM* es *self.np* en *wants_enter_pedestrian* y *self.nc[index]* en *wants_enter_car* (con su respectivo index). Una vez tenemos disponible dicha información actualmos al similar al caso anterior. Para ello, veamos como cambiaría en la sección de los coches (de personas sería análogo), 
  
-   - Añadimos a las condiciones de entrada ```(self.nc[index] < N_CARS_IN_BRIDGE and self.nc[1-index] + self.np.value == 0)``` la condición ```(self.t.value < X or self.peds.value + self.cars[1-index] == 0)```, para que entremos solo si llevamos menos tiempo entrando del propuesto como límite, X, o no hay más grupos que quieran entrar.
+   - Añadimos a las condiciones de entrada ```(self.nc[index] < N_CARS_IN_BRIDGE and self.nc[1-index] + self.np.value == 0)``` la condición ```(time.time() - self.t.value < X or self.peds.value + self.cars[1-index] == 0)```, para que entremos solo si llevamos menos tiempo entrando del propuesto como límite, X, o no hay más grupos que quieran entrar.
   
    - Cambiamos los avisos de salida del puente de 
    
@@ -322,7 +322,7 @@ En mi caso he optado por seguir introduciendo en el puente el grupo actualmente 
   index = index_dir(direction)
   (...)
   # si cumplimos las condiciones seguimos llamando a los de nuestro grupo
-  if self.t.value < X or self.peds.value + self.cars[1-index] == 0:
+  if time.time() - self.t.value < X or self.peds.value + self.cars[1-index] == 0:
       self.get_cond_cars(direction).notify(1)
   # si no, si los otros coches están esperando, les avisamos
   elif self.cars[1-index] > 0:

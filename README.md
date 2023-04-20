@@ -1,6 +1,36 @@
 # Practica 2
 
-Primero definimos una serie de constantes, como el número de coches / personas que pueden estar a la vez en el puente, el número de coches / personas a generar, los tiempos que tardan en pasar, etc. 
+## Índice 
+
+ - [Distribución de archivos](#id0)
+ - [Explicación](#id1)
+    - [Variables globales](#id1.1)
+    - [Importar paquetes](#id1.2)
+    - [Monitor](#id1.3)
+    - [Delays](#id1.4)
+    - [Generador](#id1.5)
+    - [Main](#id1.6)
+  - [Resultados](#id2)
+      
+## Distribución de archivos <a name=id0></a>
+
+ - *main.py*: archivo principal a ejecutar.
+ - *hist.py*: lo importaremos en el *main.py*, es un archivo con el fin de crear la animación final que se encuentra al final del readme, en él tendremos varias funciones para graficar y un objeto principal *History* para guardar todo el historial. No se explicará mucho el código, pues es complementario.
+ - *images/*: para guardar la demostración de inanición y los gif.
+ - *versiones/*: evolución de versiones antiguas del trabajo (sin comentar detalladamente).
+ 
+## Explicación <a name=id1></a>
+
+Tenemos el siguiente escenario: 
+
+*Un puente compartido por peatones y vehículos. La anchura del
+puente no permite el paso de vehículos en ambos sentidos. Por motivos
+de seguridad los peatones y los vehículos no pueden compartir el puente. En el caso de los
+peatones, sí que que pueden pasar peatones en sentido contrario.*
+
+### Variables globales <a name=id1.1></a>
+
+Para resolver el problema, primero definimos una serie de constantes, como el número de coches / personas que pueden estar a la vez en el puente, el número de coches / personas a generar, los tiempos que tardan en pasar, etc. 
 
 ```python
 # direcciones
@@ -30,7 +60,7 @@ N_CARS_IN_BRIDGE = 3
 N_PEDS_IN_BRIDGE = 20
 ```
 
-## Import
+### Importar paquetes <a name=id1.2></a>
 
 Importamos los paquetes necesarios para ejecutar el script
 
@@ -43,99 +73,23 @@ from multiprocessing import Value, Array
 from hist import History, plot, animate_plot
 ```
 
-donde hist.py es un script en el que hemos definido un objeto *History* y alguna función para poder graficar y visualizar mejor los resultados del final. Al finalizar el main, crearemos un gif de la evoción del monitor.
+donde *hist.py* es un script en el que hemos definido un objeto *History* y alguna función para poder graficar y visualizar mejor los resultados del final. Al finalizar el main, crearemos un gif de la evoción del monitor. Este apartado es complementario al trabajo por lo que no está lo detallado. Se trata de un objeto donde guardamos la información (que solemos hacer con los prints por pantalla) para poder tener una mejor visualización del resultado. No obstante, puesto que su información la recibe directamente cuando hacemos los prints desde el monitor (para no complicarnos), 
 
 ```python
-from multiprocessing import Array, Value
-import matplotlib.pyplot as plt
-from matplotlib import animation
-import numpy as np
-
-
-class History:
-
-    def __init__(self, N=100):
-
-        self.N = N
-        self.n = Value("i", 0)
-
-        self.history = self.create_new_block()
-
-    def create_new_block(self):
-
-        waiting_cars_north = Array("i", self.N) 
-        waiting_cars_south = Array("i", self.N) 
-        waiting_peds       = Array("i", self.N) 
-        
-        inside_cars_north  = Array("i", self.N) 
-        inside_cars_south  = Array("i", self.N) 
-        inside_peds        = Array("i", self.N) 
-        
-        block = [
-            (waiting_cars_north, waiting_cars_south, waiting_peds), 
-            (inside_cars_north, inside_cars_south, inside_peds)
-        ]
-
-        return block
-
-    def insert(self, waiting, inside):
-
-        self.history[0][1][self.n.value] = waiting[1]
-        self.history[0][2][self.n.value] = waiting[2]
-        self.history[0][0][self.n.value] = waiting[0]
-
-        self.history[1][0][self.n.value] = inside[0]
-        self.history[1][1][self.n.value] = inside[1]
-        self.history[1][2][self.n.value] = inside[2]
-        
-        self.n.value = self.n.value + 1
-
-    def size(self):
-        return self.n.value
-      
-
-def plot(t, ax1, ax2, x, y):
-    # clear plot
-    ax1.clear()
-    ax2.clear()
-    # plot waiting & inside
-    ax1.set_title("Evolucion de la lista de espera del puente")
-    ax1.plot(x[:t], y[0,0,:t], "r-", label="coches - norte")
-    ax1.plot(x[:t], y[0,1,:t], "g-", label="coches - sur")
-    ax1.plot(x[:t], y[0,2,:t], "b-", label="personas")
-    ax1.set_xlim(0,len(x)+1)
-    ax1.set_ylim(0,y[0].max()+1)
-    ax1.legend()
-    ax2.set_title("Evolucion del nº de individuos dentro del puente")
-    ax2.plot(x[:t], y[1,0,:t], "r-", label="coches - norte")
-    ax2.plot(x[:t], y[1,1,:t], "g-", label="coches - sur")
-    ax2.plot(x[:t], y[1,2,:t], "b-", label="personas")
-    ax2.set_xlim(0,len(x)+1)
-    ax2.set_ylim(0,y[1].max()+1)
-    ax2.legend()
-
-
-def animate_plot(history : History, save=False) -> None:
-    size = history.size()
-    # get data
-    x = range(size)
-    y0_cars_north = [history.history[0][0][i] for i in x]
-    y0_cars_south = [history.history[0][1][i] for i in x]
-    y0_peds       = [history.history[0][2][i] for i in x]
-    y1_cars_north = [history.history[1][0][i] for i in x]
-    y1_cars_south = [history.history[1][1][i] for i in x]
-    y1_peds       = [history.history[1][2][i] for i in x]
-    y = np.array([[y0_cars_north, y0_cars_south, y0_peds], [y1_cars_north, y1_cars_south, y1_peds]])
-    # create gif
-    fig, (ax1,ax2) = plt.subplots(2,1, figsize=(12,7))
-    ts = range(1, size+1)
-    ani = animation.FuncAnimation(fig, plot, ts, fargs=[ax1, ax2, x, y], interval=25)
-    if save:
-        ani.save("images/hist.gif")
-    plt.show()
+class Monitor():
+    
+    ...
+    
+    def __repr__(self) -> str:
+        waiting = (self.cars[0], self.cars[1], self.peds.value)
+        inside  = (self.nc[0]  , self.nc[1]  , self.np.value  )
+        self.history.insert(waiting, inside)
+        return f"Monitor: ({self.peds.value}, {self.cars[0]}, {self.cars[1]})"
 ```
 
-## Monitor
+no hemos asegurado que la información venga en el orden real pues como ya has comentado en clase, al ejecutar los prints desde distintos procesos puede que algunas líneas se escriban antes que otras que se habían ejecutado antes (en un espacio de tiempo muy junto), pero nos da una visualización general del proceso.
+
+### Monitor <a name=id1.3></a>
 
 Para el puente nos creamos un objeto *Monitor*, en él nos aseguramos de que los invariantes y condiciones de inanición se cumplan. En la hoja hemos supuesto que no hay limite de personas y coches dentro del puente, aunque luego en el código hemos añadido esa restricción para ser más realista. El invariante no lo cambia, simplemente afecta a cuando pueden entrar. Si no quisieramos ningún límite (el cual no sería realista), simplemente hay que quitar las variables ```N_CARS_IN_BRIDGE``` y ```N_PEDS_IN_BRIDGE``` y los condicionales ```self.np < N_PEDS_IN_BRIDGE``` y ```self.nc[i] < N_CARS_IN_BRIDGE``` para i = 0,1.
 
@@ -146,7 +100,32 @@ Para ello cubrimos con locks todas las partes críticas, y en el definimos todas
 
 ```python
 class Monitor():
+```
 
+ - Inicialización del monitor. Definimos variables para:
+ 
+     - El nº de coches / peatones que hay actualmente dentro del puente (deben ser excluyentes, pues solo puede haber un grupo al mismo tiempo)
+     
+        - *nc*
+        - *np*
+ 
+    - El nº de coches / peatones que hay actualmente esperando para entrar al puente
+    
+        - *cars*
+        - *peds*
+    
+    - Locks y conditions
+    
+        - *mutex*: para proteger las secciones críticas.
+        - *cond_cars_north*: condición para dejar pasar a los coches (por el norte).
+        - *cond_cars_sur*: condición para dejar pasar a los coches (por el sur).
+        - *cond_peds*: condición para dejar pasar a los peatones.
+    
+    - Objeto *History* para guardar el historial (ya comentado)
+    
+         - *history*
+
+```python
     def __init__(self, n_prints):
 
         # nº dentro del puente
@@ -165,7 +144,29 @@ class Monitor():
 
         # historial de la entrada / salida y esperas del puente 
         self.history = History(n_prints)
+```
 
+ - Funciones para la interacción de los coches y el puente.
+ 
+    - **get_cond_cars(dir)**: nos devuelve el objeto condición de los coches (por la dirección *dir*) para poder entrar al puente.  
+    
+    - **wants_enter_car(dir)**: un coche (por la dirección *dir*) quiere entrar en el puente. Por tanto primero le añadimos a la "cola" del puente ```self.cars[index] += 1```, luego esperamos a que se cumpla la condición de que no haya otros grupos en el puente y que además de los suyos no haya más de ```N_CARS_IN_BRIDGE``` para ser más realista (que no quepan por el puente infinitos coches al mismo tiempo), una vez pasada dicha condición, metemos el coche en el puente, para ello
+    
+        - lo quitamos de la cola ```self.cars[index] -= 1```.
+        - lo añadimos al interior del puente ```self.nc[index] += 1```.
+        
+       Aseguramos la sección completa (crítica) con el *mutex*.
+       
+    - **enter_car(dir)**: solo se ocupa de pasar el coche por el puente, es decir, hacer un *delay* del tiempo que tarde en cruzarlo.
+    
+    - **leaves_car(dir)**: sacamos el coche del puente y hacemos los avisos correspondientes. Para ello primero lo quitamos de la lista de coches dentro del puente ```self.nc[index] -= 1``` y luego avisamos a los demás de que hemos salido.
+    
+        - Primero avisamos a **un** coche de nuestra dirección para que ocupe nuestro espacio que hemos dejado libre y se mantenga una fluidez en el paso, ```self.get_cond_cars(direction).notify(1)```.
+        - En el caso de no haber coches de nuestra dirección a la espera, avismos a los **todos** los coches de la otra dirección y luego **todos** los peatones, con el fin de que algún grupo entre primero, ```self.get_cond_cars(change_dir(direction)).notify_all()```, ```self.cond_peds.notify_all()```. Avisamos a todos para aprovechar el hecho de que caben ```N_CARS_IN_BRIDGE``` coches / ```N_PEDS_IN_BRIDGE``` peatones (respectivamente) a la vez en el puente. 
+        
+        Aseguramos la sección completa (crítica) con el *mutex*. 
+
+```python
     def get_cond_cars(self, direction):
         return self.cond_cars_north if direction == NORTH else self.cond_cars_south
 
@@ -173,7 +174,6 @@ class Monitor():
         self.mutex.acquire()
         index = index_dir(direction)
         self.cars[index] += 1
-        index = index_dir(direction)
         self.get_cond_cars(direction).wait_for(
             lambda : 
                 (self.nc[index] < N_CARS_IN_BRIDGE and self.nc[1-index] + self.np.value == 0)
@@ -198,7 +198,27 @@ class Monitor():
         self.get_cond_cars(change_dir(direction)).notify_all()
         self.cond_peds.notify_all()
         self.mutex.release()
+```
+
+ - Funciones para la interacción de los peatones y el puente (idea análoga a la anterior de los coches).
+     
+    - **wants_enter_pedestrian()**: un peatón quiere entrar en el puente. Por tanto primero le añadimos a la "cola" del puente ```self.peds.value += 1```, luego esperamos a que se cumpla la condición de que no haya otros grupos en el puente y que además de los suyos no haya más de ```N_PEDS_IN_BRIDGE``` para ser más realista (que no quepan por el puente infinitos peatones al mismo tiempo), una vez pasada dicha condición, metemos el coche en el puente, para ello
     
+        - lo quitamos de la cola ```self.peds.value -= 1```.
+        - lo añadimos al interior del puente ```self.np.value += 1```.
+        
+       Aseguramos la sección completa (crítica) con el *mutex*.
+       
+    - **enter_pedestrian()**: solo se ocupa de pasar el peatón por el puente, es decir, hacer un *delay* del tiempo que tarde en cruzarlo.
+    
+    - **leaves_pedestrian()**: sacamos el peatón del puente y hacemos los avisos correspondientes. Para ello primero lo quitamos de la lista de peatones dentro del puente ```self.np.value -= 1``` y luego avisamos a los demás de que hemos salido.
+    
+        - Primero avisamos a **un** peatón para que ocupe nuestro espacio que hemos dejado libre y se mantenga una fluidez en el paso, ```self.cond_peds.notify(1)```.
+        - En el caso de no haber peatones a la espera, avismos a los **todos** los coches (de las dos direcciones), con el fin de que algún grupo entre primero, ```self.cond_cars_north.notify_all()```, ```self.cond_cars_south.notify_all()```. Avisamos a todos para aprovechar el hecho de que caben ```N_CARS_IN_BRIDGE``` coches a la vez en el puente. 
+        
+        Aseguramos la sección completa (crítica) con el *mutex*. 
+
+```python
     def wants_enter_pedestrian(self) -> None:
         self.mutex.acquire()
         self.peds.value += 1
@@ -222,7 +242,11 @@ class Monitor():
         self.cond_cars_north.notify_all()
         self.cond_cars_south.notify_all()
         self.mutex.release()
+```
 
+ - Por último como ya comentamos, en la representación del puente añadimos un paso auxiliar para que cada vez que printeemos por pantalla información, la vayamos guardando en nuestro historial.
+
+```python
     def __repr__(self) -> str:
         waiting = (self.cars[0], self.cars[1], self.peds.value)
         inside  = (self.nc[0]  , self.nc[1]  , self.np.value  )
@@ -230,7 +254,9 @@ class Monitor():
         return f"Monitor: ({self.peds.value}, {self.cars[0]}, {self.cars[1]})"
 ```
 
-por último definimos funciones para los tiempos que tardan en pasar cada uno por el puente
+### Delays <a name=id1.4></a>
+
+Definimos funciones para los tiempos que tardan en pasar cada uno por el puente. Las funciones *ticket* habían sido creadas con el fin de también introducir un tiempo que se tarda en coger un ticket para poder entrar al puente, pero al final solo era esperar más por lo que lo he obviado.   
 
 ```python
 def ticket_car():
@@ -256,7 +282,7 @@ def delay_pedestrian() -> None:
     time.sleep(max(0,t))
 ```
 
-## Generador 
+### Generador <a name=id1.5></a>
 
 Este apartado permitirá generar distintos coches (aleatoriamente por el norte o por el sur) y distintas personas. Según se vayan creando las irá introduciendo por el puente. Las funciones de generar son *gen_cars* y *gen_pedestrians*, mientras que las funciones *car* y *pedestrian* se encargan individualmente de que cada coche y persona respectivamente, entre y salga del puente cuando llegue su turno.
 
@@ -288,7 +314,6 @@ def gen_pedestrian(monitor: Monitor) -> None:
         p.start()
         plst.append(p)
         t = random.expovariate(1/TIME_PED)
-        CRONO_GEN_PEDS.value += t
         time.sleep(t)
 
     for p in plst:
@@ -304,16 +329,15 @@ def gen_cars(monitor: Monitor) -> None:
         p.start()
         plst.append(p)
         t = random.expovariate(1/TIME_CARS)
-        CRONO_GEN_CARS.value += t
         time.sleep(t)
 
     for p in plst:
         p.join()
 ```
 
-## Main
+### Main <a name=id1.6></a>
 
-Por último para ejecutar todo el proceso ejecutamos el *main* que comienza los procesos de generación de coches y personas.
+Por último para ejecutar todo el proceso ejecutamos el *main* que comienza los procesos de generación de coches y personas. La variable *CRONO_TOTAL* nos dice el tiempo que ha tardado en ejecutar todo el proceso.
 
 ```python
 if __name__ == "__main__":
@@ -331,7 +355,7 @@ if __name__ == "__main__":
     animate_plot(monitor.history)
 ```
 
-## Resultados
+## Resultados <a name=id2></a>
 
 Podemos observar como efectivamente únicamente uno de los tres grupos se encuentra dentro del puente al mismo tiempo. Además se puede comprobar también que el número máximo de personas y coches dentro del puente es ```N_CARS_IN_BRIDGE = 3``` y ```N_PEDS_IN_BRIDGE = 20``` respectivamente, como era de esperar.   
 
